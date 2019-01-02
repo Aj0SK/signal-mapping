@@ -52,7 +52,7 @@ fastaSequenceFile.close()
 sequenceIndex = mp.Aligner("test/sequence.fa")  
 if not sequenceIndex: raise Exception("ERROR: failed to load/build reference index")
 
-outFile = open("testout/out.txt", "w")
+outFile = open("out.txt", "w")
 
 for name, seq, qual in mp.fastx_read(sys.argv[1]): # read a fasta/q sequence
         for hit in sequenceIndex.map(seq): # traverse alignments
@@ -62,7 +62,7 @@ for name, seq, qual in mp.fastx_read(sys.argv[1]): # read a fasta/q sequence
             outFile.write(hit.ctg)
             if len(pole) != 0:
                 for elem in pole:
-                    outFile.write(str(elem) + " ")
+                    outFile.write(" " + str(elem))
                 outFile.write("\n")
                     
 

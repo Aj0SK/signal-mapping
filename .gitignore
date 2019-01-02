@@ -1,2 +1,3 @@
-env/
+venv/
 minimap2/
+*.txt
