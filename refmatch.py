@@ -16,11 +16,20 @@ def myF(sequenceFileName, hit_beg, hit_end):
     out = []
     j = -1
     
+    zaciatok = 0
+    koniec = 0
+    
     for index in range(0, len(basecallEventTable)):
         j = j + basecallEventTable[index][5]
-        if (j>= hit_beg and j<=hit_end) or (j+5> hit_beg and j+5<=hit_end):
-            out.append(rawData[basecallEventTable[index][1].item()].item())
-    
+        
+        if zaciatok == 0 and j+5 > hit_beg:
+            zaciatok = 1
+            out.append(basecallEventTable[index][1].item())
+        
+        if zaciatok == 1 and koniec == 0 and j>=hit_end:
+            koniec = 1;
+            out.append(basecallEventTable[index][1].item())
+            
     sequenceFile.close()
     return out
 
@@ -33,6 +42,10 @@ if len(sys.argv) != 3:
 if not os.path.exists("temporary"):
     os.makedirs("temporary")
 
+if not os.path.isfile(sys.argv[1]):
+    print("Referencny subor neexistuje.")
+    exit(1)
+
 sequenceFilesNames = []
 sequenceFilesIndexer = {}
 
@@ -41,6 +54,8 @@ sequenceFilesIndexer = {}
 fastaSequenceFile = open("temporary/sequence.fa", 'w')
 
 fast5Files = glob.glob(sys.argv[2] + '/**/*.fast5', recursive=True)
+
+print("Najdenych " + str(len(fast5Files)) + " suborov")
 
 for file in fast5Files:
     
