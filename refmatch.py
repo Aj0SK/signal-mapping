@@ -79,14 +79,12 @@ outFile = open("out.txt", "w")
 
 for name, seq, qual in mp.fastx_read(sys.argv[1]): # read a fasta/q sequence
         for hit in sequenceIndex.map(seq): # traverse alignments
-            #print("{}\t{}\t{}".format(hit.ctg, hit.r_st, hit.r_en))
+            #print("{}\t{}\t{}\t{}\t{}".format(hit.ctg, hit.r_st, hit.r_en, hit.q_st, hit.q_en))
             index = sequenceFilesIndexer[hit.ctg]
-            pole = myF(sequenceFilesNames[index], hit.r_st, hit.r_en)
-            outFile.write(hit.ctg)
-            if len(pole) != 0:
-                for elem in pole:
-                    outFile.write(" " + str(elem))
-                outFile.write("\n")
+            queryIndex = myF(sequenceFilesNames[index], hit.r_st, hit.r_en)
+            
+            if len(queryIndex) == 2:
+                outFile.write(hit.ctg + " " + str(hit.q_st) + " " + str(hit.q_en) + " " + str(queryIndex[0]) + " " + str(queryIndex[1]))
 
 os.remove("temporary/sequence.fa")
 os.rmdir("temporary")
