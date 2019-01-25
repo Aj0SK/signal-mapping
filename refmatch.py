@@ -1,11 +1,12 @@
 import sys
 import os
 import glob
+import tempfile
+import argparse
 
-import h5py
 import numpy as np
+import h5py
 import mappy as mp
-
 
 # find signal corresponding to string [hit_beg, hit_end] in sequenceFile with name sequenceFileName 
 
@@ -47,34 +48,34 @@ def myF(sequenceFileName, hit_beg, hit_end):
 
 ################################################################################
 
+minimal_match_size = 50
 
-if len(sys.argv) != 3:
-    print("Usage is python refmatch.py <reference.fa> <search_directory>")
+parser = argparse.ArgumentParser()
+parser.add_argument("-r", "--referenceFile", help="location of reference .fa file", type=str)
+parser.add_argument("-s", "--sequenceFolder", help="folder with sequence files", type=str)
+parser.add_argument("-mm", "--minimalMatch", help="minimal size of match that will can be on output", type=int, default = 50)
 
-# store all temporary data here
-if not os.path.exists("temporary"):
-    os.makedirs("temporary")
+args = parser.parse_args()
 
-if not os.path.isfile(sys.argv[1]):
+if not os.path.isfile(args.referenceFile):
     print("Referencny subor neexistuje.")
     exit(1)
 
 # recursively find all fast5 files in directory
 
-fast5Files = glob.glob(sys.argv[2] + '/**/*.fast5', recursive=True)
+fast5Files = glob.glob(args.sequenceFolder + '/**/*.fast5', recursive=True)
 
 print("Najdenych " + str(len(fast5Files)) + " suborov")
 
 # create fasta file from sequence strings
 
-fastaSequenceFile = open("temporary/sequence.fa", 'w')
+fastaSequenceFile = tempfile.NamedTemporaryFile(mode = 'w', suffix = '.fa', delete=False)
 
 for file in fast5Files:
     
     sequenceFile = h5py.File(file, 'r')
     basecallOut = str(sequenceFile['/Analyses/Basecall_1D_000/BaseCalled_template/Fastq'][()]).split('\\n')
     basecallString = basecallOut[1]
-    
     fastaSequenceFile.write(">" + file + "\n")
     fastaSequenceFile.write(basecallString + "\n")
     sequenceFile.close()
@@ -83,22 +84,29 @@ fastaSequenceFile.close()
 
 # load created fasta file
 
-sequenceIndex = mp.Aligner("temporary/sequence.fa")  
+sequenceIndex = mp.Aligner(args.referenceFile)
 if not sequenceIndex: raise Exception("ERROR: failed to load/build reference index")
 
 # create out-file and fill it with hits
 
 outFile = open("out.txt", "w")
 
-for name, seq, qual in mp.fastx_read(sys.argv[1]): # read a fasta sequence
+# header
+
+outFile.write("# <sequenceFileName> <reference_begin> <reference_end> <sequence_begin> <sequence_end>\n\n")
+
+for name, seq, qual in mp.fastx_read(fastaSequenceFile.name): # read a fasta sequence
         for hit in sequenceIndex.map(seq): # traverse alignments
+            
+            if (hit.r_en - hit.r_st < args.minimalMatch):
+                continue
+            
             # hit.q_st, hit.q_en  <- hit in reference
             # hit_r_st, hir.r_en  <- hit in sequence
             
-            queryIndex = myF(hit.ctg, hit.r_st, hit.r_en)
+            queryIndex = myF(name, hit.q_st, hit.q_en)
             
             if len(queryIndex) == 2:
-                outFile.write(hit.ctg + " " + str(hit.q_st) + " " + str(hit.q_en) + " " + str(queryIndex[0]) + " " + str(queryIndex[1]) + "\n\n")
-
-os.remove("temporary/sequence.fa")
-os.rmdir("temporary")
+                outFile.write(name + '\t')
+                outFile.write(str(hit.r_st) + '\t' + str(hit.r_en) + '\t')
+                outFile.write(str(queryIndex[0]) + "\t" + str(queryIndex[1]) + "\n\n")
