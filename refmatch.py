@@ -52,7 +52,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-r", "--referenceFile", help="location of reference .fa file", type=str)
 parser.add_argument("-s", "--sequenceFolder", help="folder with sequence files", type=str)
 parser.add_argument("-mm", "--minimalMatch", help="minimal size of match that will can be on output", type=int, default = 50)
-parser.add_argument("-o", "--outputFile", help="output file", type=str, default = "out.txt")
+parser.add_argument("-o", "--outputFile", help="specifies output file", type=str, default = "out.txt")
 parser.add_argument('-raw', action='store_true', help="output raw signal")
 parser.add_argument('-fake', action='store_true', help="create fake read from hit")
 
@@ -64,7 +64,7 @@ assert os.path.isfile(args.referenceFile), "Reference file not exists."
 
 fast5Files = glob.glob(args.sequenceFolder + '/**/*.fast5', recursive=True)
 
-print("Found " + str(len(fast5Files)) + " .fast5 files")
+print("Found %d .fast5 files\n" % (len(fast5Files)))
 
 # create fasta file from sequence strings
 
@@ -106,9 +106,7 @@ for name, seq, qual in mp.fastx_read(fastaSequenceFile.name): # read a fasta seq
             queryIndex = myF(args, name, hit.q_st, hit.q_en)
             
             if len(queryIndex) >= 2:
-                outFile.write(name + '\t' + hit.ctg + '\t')
-                outFile.write(str(hit.r_st) + '\t' + str(hit.r_en) + '\t')
-                outFile.write(str(queryIndex[0]) + "\t" + str(queryIndex[1]) + "\n")
+                outFile.write("%s\t%s\t%d\t%d\t%d\t%d\t%d\n" % (name, hit. ctg, hit.r_st, hit.r_en, queryIndex[0], queryIndex[1], hit.strand) )
             else:
                 print("Match not found in sequence file, could be caused by corruption of data.")
                 exit(1)
