@@ -15,7 +15,7 @@ Je potrebné vytvoriť virtualenv a rozbehnúť potrebné knižnice.
 
 ## Použitie
 
-    (venv) $ python3 refmatch.py -r test/reference.fa -s test
+    (venv) $ python3 refmatch.py -r test/reference.fa -s test/
 
 Tento príkaz spustí program refmatch a referenciu zo súboru ./test/reference.fa vyhľadá vo .fast5 súboroch
 z priečinka test(takisto aj v jeho podpriečinkoch)
