@@ -3,10 +3,19 @@ import os
 import glob
 import tempfile
 import argparse
-
 import numpy as np
 import h5py
 import mappy as mp
+
+out_header = "# <sequenceFileName> <reference_begin> <reference_end> <sequence_begin> <sequence_end>"
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-r", "--referenceFile", help="location of reference .fa file", type=str)
+parser.add_argument("-s", "--sequenceFolder", help="folder with sequence files", type=str)
+parser.add_argument("-mm", "--minimalMatch", help="minimal size of match that will can be on output", type=int, default = 50)
+parser.add_argument("-o", "--outputFile", help="specifies output file", type=str, default = "out.txt")
+parser.add_argument('-raw', action='store_true', help="output raw signal")
+parser.add_argument('-fake', action='store_true', help="create fake read from hit")
 
 def myF(args, sequenceFileName, hit_beg, hit_end):
     # open file
@@ -48,14 +57,6 @@ def myF(args, sequenceFileName, hit_beg, hit_end):
 
 ################################################################################
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-r", "--referenceFile", help="location of reference .fa file", type=str)
-parser.add_argument("-s", "--sequenceFolder", help="folder with sequence files", type=str)
-parser.add_argument("-mm", "--minimalMatch", help="minimal size of match that will can be on output", type=int, default = 50)
-parser.add_argument("-o", "--outputFile", help="specifies output file", type=str, default = "out.txt")
-parser.add_argument('-raw', action='store_true', help="output raw signal")
-parser.add_argument('-fake', action='store_true', help="create fake read from hit")
-
 args = parser.parse_args()
 
 assert os.path.isfile(args.referenceFile), "Reference file not exists."
@@ -92,10 +93,10 @@ outFile = open(args.outputFile, "w")
 
 # header
 
-outFile.write("# <sequenceFileName> <reference_begin> <reference_end> <sequence_begin> <sequence_end>\n\n")
+outFile.write(out_header + "\n\n")
 
 for name, seq, qual in mp.fastx_read(fastaSequenceFile.name): # read a fasta sequence
-        for hit in sequenceIndex.map(seq): # traverse alignments
+        for hit in sequenceIndex.map(seq, cs = True): # traverse alignments
             
             if (hit.r_en - hit.r_st < args.minimalMatch):
                 continue
