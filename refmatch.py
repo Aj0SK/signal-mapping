@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import h5py
 import mappy as mp
+import re
 
 out_header = "# <sequenceFileName> <reference_begin> <reference_end> <sequence_begin> <sequence_end>"
 
@@ -17,7 +18,29 @@ parser.add_argument("-o", "--outputFile", help="specifies output file", type=str
 parser.add_argument('-raw', action='store_true', help="output raw signal")
 parser.add_argument('-fake', action='store_true', help="create fake read from hit")
 
-def myF(args, sequenceFileName, hit_beg, hit_end):
+
+class Table_Iterator:
+
+    def __init__(self, basecallEventTable):
+        self.table = basecallEventTable
+        self.tableindex = 0
+        self.localindex = 0
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        while self.localindex == 5:
+            if self.tableindex + 1 != len(self.table):
+                self.tableindex += 1
+                self.localindex = 5-int(self.table[self.tableindex][5])
+            else:
+                raise StopIteration
+
+        self.localindex += 1
+        return self.table[self.tableindex][4][self.localindex-1]
+
+def myF(args, sequenceFileName, hit_beg, hit_end, csSequence = None):
     # open file
     sequenceFile = h5py.File(sequenceFileName, 'r')
     
@@ -48,10 +71,24 @@ def myF(args, sequenceFileName, hit_beg, hit_end):
         if begg == 1 and j>=hit_end:
             out.append(basecallEventTable[index][1].item())
             break
-        
+
     for i in range(out[0], out[1]):
         out.append(rawData[i].item())
-        
+
+    '''
+    sequenceIterator = Table_Iterator(basecallEventTable)
+
+    csParsed = re.findall(r':[0-9]+|\*[a-z][a-z]|[=\+\-][A-Za-z]+', csSequence)
+
+    #print(str(csParsed))
+
+    index, current, reference_index = 0, 0, 0
+    for parsed in csParsed:
+        if parsed[0] == ':':
+
+        elif csParsed[index][0] == '-':
+            reference_index += len(parsed)-1
+    '''
     sequenceFile.close()
     return out
 
@@ -103,15 +140,15 @@ for name, seq, qual in mp.fastx_read(fastaSequenceFile.name): # read a fasta seq
             
             # hit.r_st, hit.r_en  <- hit in reference
             # hit.q_st, hir.q_en  <- hit in sequence
-            
-            queryIndex = myF(args, name, hit.q_st, hit.q_en)
+
+            queryIndex = myF(args, name, hit.q_st, hit.q_en, hit.cs)
             
             if len(queryIndex) >= 2:
                 outFile.write("%s\t%s\t%d\t%d\t%d\t%d\t%d\n" % (name, hit. ctg, hit.r_st, hit.r_en, queryIndex[0], queryIndex[1], hit.strand) )
             else:
                 print("Match not found in sequence file, could be caused by corruption of data.")
                 exit(1)
-        
+
             if args.raw:
                 for signal in queryIndex[2:]:
                     outFile.write(str(signal) + ' ')
