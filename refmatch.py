@@ -56,21 +56,25 @@ def myF(args, sequenceFileName, hit_beg, hit_end, csSequence = None):
     j = -1
     
     # as we are passing through table, did we pass begg or end?
-    begg = 0
+    begg, endd = False, False
     
     for index in range(0, len(basecallEventTable)):
         # we are moving through basecalled string using table
         j = j + basecallEventTable[index][5]
         
         # if our string of length 5 passed beginning, we mark beginning
-        if begg == 0 and j+5 > hit_beg:
-            begg = 1
+        if begg == False and j+5 > hit_beg:
+            begg = True
             out.append(basecallEventTable[index][1].item())
         
         # if our string of length 5 passed ending, we mark ending
-        if begg == 1 and j>=hit_end:
+        if begg == True and j>=hit_end:
             out.append(basecallEventTable[index][1].item())
+            endd = True
             break
+
+    if begg == True and endd == False:
+        out.append(basecallEventTable[index][1].item())
 
     for i in range(out[0], out[1]):
         out.append(rawData[i].item())
@@ -140,6 +144,7 @@ for name, seq, qual in mp.fastx_read(fastaSequenceFile.name): # read a fasta seq
             
             # hit.r_st, hit.r_en  <- hit in reference
             # hit.q_st, hir.q_en  <- hit in sequence
+
 
             queryIndex = myF(args, name, hit.q_st, hit.q_en, hit.cs)
             
