@@ -60,21 +60,21 @@ def myF(args, sequenceFileName, hit_beg, hit_end, csSequence = None):
     
     for index in range(0, len(basecallEventTable)):
         # we are moving through basecalled string using table
-        j = j + basecallEventTable[index][5]
+        j = j + basecallEventTable[index]['move']
         
         # if our string of length 5 passed beginning, we mark beginning
         if begg == False and j+5 > hit_beg:
             begg = True
-            out.append(basecallEventTable[index][1].item())
+            out.append(basecallEventTable[index]['start'].item())
         
         # if our string of length 5 passed ending, we mark ending
         if begg == True and j>=hit_end:
-            out.append(basecallEventTable[index][1].item())
+            out.append(basecallEventTable[index]['start'].item())
             endd = True
             break
 
     if begg == True and endd == False:
-        out.append(basecallEventTable[index][1].item())
+        out.append(basecallEventTable[index]['start'].item())
 
     for i in range(out[0], out[1]):
         out.append(rawData[i].item())
